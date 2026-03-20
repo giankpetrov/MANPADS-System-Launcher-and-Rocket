@@ -210,9 +210,10 @@ void processSerial2() {
 void processUDP() {
     int packetSize = udp.parsePacket();
     if (packetSize) {
-        char buffer[packetSize + 1];
-        udp.read(buffer, packetSize);
-        buffer[packetSize] = '\0';
+        char buffer[256];
+        int len = udp.read(buffer, sizeof(buffer) - 1);
+        if (len < 0) len = 0;
+        buffer[len] = '\0';
         
         String msg = String(buffer);
         msg.trim();
