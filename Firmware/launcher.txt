@@ -153,7 +153,15 @@ void setup() {
     successTone();
 }
 
-void sendToDashboard(String msg) {
+void sendToDashboard(const String& msg) {
+    if (dashboardConnected) {
+        udp.beginPacket(dashboardIP, udpPort);
+        udp.println(msg);
+        udp.endPacket();
+    }
+}
+
+void sendToDashboard(const char* msg) {
     if (dashboardConnected) {
         udp.beginPacket(dashboardIP, udpPort);
         udp.println(msg);
@@ -199,8 +207,13 @@ void processSerial2() {
                     String kd = msg.substring(c[8]+1, c[9]);
                     String skew = msg.substring(c[9]+1);
 
-                    sendToDashboard("T," + String(millis()) + "," + roll + "," + rate + "," + out);
-                    sendToDashboard("STATUS:" + state + "," + kp + "," + kd + "," + skew);
+                    char bufT[128];
+                    snprintf(bufT, sizeof(bufT), "T,%lu,%s,%s,%s", millis(), roll.c_str(), rate.c_str(), out.c_str());
+                    sendToDashboard(bufT);
+
+                    char bufS[128];
+                    snprintf(bufS, sizeof(bufS), "STATUS:%s,%s,%s,%s", state.c_str(), kp.c_str(), kd.c_str(), skew.c_str());
+                    sendToDashboard(bufS);
                 }
             }
         }
@@ -395,7 +408,7 @@ void loop() {
         // Send: ENV,lat,lon,alt,gpsState
         char envMsg[128];
         snprintf(envMsg, sizeof(envMsg), "ENV,%.6f,%.6f,%.1f,%d", lat, lon, filteredAlt, gpsState);
-        sendToDashboard(String(envMsg));
+        sendToDashboard(envMsg);
     }
 }
 
@@ -435,7 +448,7 @@ void updateAndPrintFusion() {
 
     char fusionMsg[128];
     snprintf(fusionMsg, sizeof(fusionMsg), "[FUSION] Hdg: %03.1f | Pitch: %+02.1f", heading, pitch * 180.0/PI);
-    sendToDashboard(String(fusionMsg)); 
+    sendToDashboard(fusionMsg);
 }
 
 void abortSequence(String reason) {
